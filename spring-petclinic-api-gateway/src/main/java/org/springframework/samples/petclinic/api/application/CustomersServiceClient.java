@@ -33,8 +33,6 @@ public class CustomersServiceClient {
     }
 
     public Mono<OwnerDetails> getOwner(final int ownerId) {
-//        test change file
-//        hello ahihi
         return webClientBuilder.build().get()
             .uri("http://customers-service/owners/{ownerId}", ownerId)
             .retrieve()
