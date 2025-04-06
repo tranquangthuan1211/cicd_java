@@ -25,18 +25,36 @@ pipeline {
         }
 
         stage('Detect Changes') {
-            steps {
-                script {
-                    def changedFiles = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim()
-                    echo "Changed files:\n${changedFiles}"
+            script {
+                def baseCommit = sh(script: '''
+                    git fetch origin main || true
+                    if git show-ref --verify --quiet refs/remotes/origin/main; then
+                        git merge-base origin/main HEAD
+                    else
+                        git rev-parse HEAD~1
+                    fi
+                ''', returnStdout: true).trim()
 
-                    env.BUILD_VETS = changedFiles.contains("spring-petclinic-vets-service/")
-                    env.BUILD_VISITS = changedFiles.contains("spring-petclinic-visits-service/")
-                    env.BUILD_CUSTOMERS = changedFiles.contains("spring-petclinic-customers-service/")
-                    echo "BUILD_VETS: ${env.BUILD_VETS}"
-                    echo "BUILD_VISITS: ${env.BUILD_VISITS}"
-                    echo "BUILD_CUSTOMERS: ${env.BUILD_CUSTOMERS}"
-                }
+                def changedServices = sh(
+                    script: "git diff --name-only ${baseCommit} HEAD | awk -F/ '{print \$1}' | sort -u",
+                    returnStdout: true
+                ).trim().split('\n')
+
+                def allServices = [
+                    'spring-petclinic-vets-service',
+                    'spring-petclinic-visits-service',
+                    'spring-petclinic-customers-service',
+                    'spring-petclinic-genai-service'
+                ]
+
+                def changedServicesList = changedServices as List
+                env.SERVICES_TO_BUILD = allServices.findAll { it in changedServicesList }.join(',')
+                echo "Services to build: ${env.SERVICES_TO_BUILD}"
+
+                // Đặt giá trị true/false cho từng service
+                env.BUILD_VETS = changedServicesList.contains("spring-petclinic-vets-service").toString()
+                env.BUILD_VISITS = changedServicesList.contains("spring-petclinic-visits-service").toString()
+                env.BUILD_CUSTOMERS = changedServicesList.contains("spring-petclinic-customers-service").toString()
             }
         }
 
