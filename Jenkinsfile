@@ -30,9 +30,9 @@ pipeline {
                     def changedFiles = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim()
                     echo "Changed files:\n${changedFiles}"
 
-                    env.BUILD_VETS = changedFiles.contains("spring-petclinic-vets-service/")
-                    env.BUILD_VISITS = changedFiles.contains("spring-petclinic-visits-service/")
-                    env.BUILD_CUSTOMERS = changedFiles.contains("spring-petclinic-customers-service/")
+                    env.BUILD_VETS = changedFiles.any { it.startsWith("spring-petclinic-vets-service/") }
+                    env.BUILD_VISITS = changedFiles.any { it.startsWith("spring-petclinic-visits-service/") }
+                    env.BUILD_CUSTOMERS = changedFiles.any { it.startsWith("spring-petclinic-customers-service/") }
                     echo "BUILD_VETS: ${env.BUILD_VETS}"
                     echo "BUILD_VISITS: ${env.BUILD_VISITS}"
                     echo "BUILD_CUSTOMERS: ${env.BUILD_CUSTOMERS}"
