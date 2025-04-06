@@ -25,36 +25,38 @@ pipeline {
         }
 
         stage('Detect Changes') {
-            script {
-                def baseCommit = sh(script: '''
-                    git fetch origin main || true
-                    if git show-ref --verify --quiet refs/remotes/origin/main; then
-                        git merge-base origin/main HEAD
-                    else
-                        git rev-parse HEAD~1
-                    fi
-                ''', returnStdout: true).trim()
+            steps {
+                script {
+                    def baseCommit = sh(script: '''
+                        git fetch origin main || true
+                        if git show-ref --verify --quiet refs/remotes/origin/main; then
+                            git merge-base origin/main HEAD
+                        else
+                            git rev-parse HEAD~1
+                        fi
+                    ''', returnStdout: true).trim()
 
-                def changedServices = sh(
-                    script: "git diff --name-only ${baseCommit} HEAD | awk -F/ '{print \$1}' | sort -u",
-                    returnStdout: true
-                ).trim().split('\n')
+                    def changedServices = sh(
+                        script: "git diff --name-only ${baseCommit} HEAD | awk -F/ '{print \$1}' | sort -u",
+                        returnStdout: true
+                    ).trim().split('\n')
 
-                def allServices = [
-                    'spring-petclinic-vets-service',
-                    'spring-petclinic-visits-service',
-                    'spring-petclinic-customers-service',
-                    'spring-petclinic-genai-service'
-                ]
+                    def allServices = [
+                        'spring-petclinic-vets-service',
+                        'spring-petclinic-visits-service',
+                        'spring-petclinic-customers-service',
+                        'spring-petclinic-genai-service'
+                    ]
 
-                def changedServicesList = changedServices as List
-                env.SERVICES_TO_BUILD = allServices.findAll { it in changedServicesList }.join(',')
-                echo "Services to build: ${env.SERVICES_TO_BUILD}"
+                    def changedServicesList = changedServices as List
+                    env.SERVICES_TO_BUILD = allServices.findAll { it in changedServicesList }.join(',')
+                    echo "Services to build: ${env.SERVICES_TO_BUILD}"
 
-                // Đặt giá trị true/false cho từng service
-                env.BUILD_VETS = changedServicesList.contains("spring-petclinic-vets-service").toString()
-                env.BUILD_VISITS = changedServicesList.contains("spring-petclinic-visits-service").toString()
-                env.BUILD_CUSTOMERS = changedServicesList.contains("spring-petclinic-customers-service").toString()
+                    // Đặt giá trị true/false cho từng service
+                    env.BUILD_VETS = changedServicesList.contains("spring-petclinic-vets-service").toString()
+                    env.BUILD_VISITS = changedServicesList.contains("spring-petclinic-visits-service").toString()
+                    env.BUILD_CUSTOMERS = changedServicesList.contains("spring-petclinic-customers-service").toString()
+                }
             }
         }
 
